@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model academy {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String              @db.VarChar(255)
+  user_id           String              @db.Uuid
+  user              user                @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  event             event[]
+  player            player[]
+  subscription_plan subscription_plan[]
+  training_plan     training_plan[]
+}
+
+model event {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academy_id  String   @db.Uuid
+  title       String   @db.VarChar(255)
+  description String?
+  start_date  DateTime @db.Timestamp(6)
+  end_date    DateTime @db.Timestamp(6)
+  academy     academy  @relation(fields: [academy_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model exercise {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  training_plan_id String        @db.Uuid
+  title            String        @db.VarChar(255)
+  description      String?
+  training_plan    training_plan @relation(fields: [training_plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model message {
+  id                             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sender_id                      String   @db.Uuid
+  receiver_id                    String   @db.Uuid
+  content                        String
+  sent_at                        DateTime @db.Timestamp(6)
+  user_message_receiver_idTouser user     @relation("message_receiver_idTouser", fields: [receiver_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_message_sender_idTouser   user     @relation("message_sender_idTouser", fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model payment {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String            @db.Uuid
+  subscription_plan_id String            @db.Uuid
+  amount               Int
+  payment_date         DateTime          @db.Timestamp(6)
+  subscription_plan    subscription_plan @relation(fields: [subscription_plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                 user              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model player {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String                 @db.Uuid
+  academy_id           String                 @db.Uuid
+  skill_level          Int
+  progress             Int
+  academy              academy                @relation(fields: [academy_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                 user                   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  player_training_plan player_training_plan[]
+}
+
+model player_training_plan {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  player_id        String        @db.Uuid
+  training_plan_id String        @db.Uuid
+  start_date       DateTime      @db.Date
+  end_date         DateTime      @db.Date
+  player           player        @relation(fields: [player_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  training_plan    training_plan @relation(fields: [training_plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model subscription_plan {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academy_id String    @db.Uuid
+  name       String    @db.VarChar(255)
+  price      Int
+  duration   Int
+  payment    payment[]
+  academy    academy   @relation(fields: [academy_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model training_plan {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academy_id           String                 @db.Uuid
+  title                String                 @db.VarChar(255)
+  description          String?
+  exercise             exercise[]
+  player_training_plan player_training_plan[]
+  academy              academy                @relation(fields: [academy_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id                                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role                              String    @db.VarChar(255)
+  name                              String    @db.VarChar(255)
+  email                             String    @unique @db.VarChar(255)
+  password                          String    @db.VarChar(255)
+  roq_user_id                       String?   @db.VarChar(255)
+  tenant_id                         String?   @db.VarChar(255)
+  academy                           academy[]
+  message_message_receiver_idTouser message[] @relation("message_receiver_idTouser")
+  message_message_sender_idTouser   message[] @relation("message_sender_idTouser")
+  payment                           payment[]
+  player                            player[]
+}
